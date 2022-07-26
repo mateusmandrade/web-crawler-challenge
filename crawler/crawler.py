@@ -1,7 +1,5 @@
 import requests
 from lxml import html
-from rich.console import Console
-from rich.table import Table
 
 
 class BareMetalCrawler:
@@ -14,8 +12,9 @@ class BareMetalCrawler:
         "BANDWIDTH / TRANSFER",
     )
 
-    def __init__(self, url: str) -> None:
+    def __init__(self, url: str, outputters: list) -> None:
         self.url = url
+        self.outputters = outputters
 
     def _get_xpath_list(self, query: str) -> list:
         response = requests.get(self.url)
@@ -69,14 +68,7 @@ class BareMetalCrawler:
         return specifications
 
     def show_results(self) -> None:
-        machines_specifications = self._get_specifications()
-        table = Table(title=f"Page: {self.url}", show_lines=True)
+        specifications = self._get_specifications()
 
-        for field_name in self.field_names:
-            table.add_column(field_name)
-
-        for specifications in machines_specifications:
-            table.add_row(*specifications)
-
-        console = Console()
-        console.print(table)
+        for output in self.outputters:
+            output.generate_output(self.field_names, specifications)
