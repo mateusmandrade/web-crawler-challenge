@@ -1,7 +1,7 @@
 import typer
 
 from crawler.crawler import BareMetalCrawler
-from crawler.outputters import JSONOutputter, StdoutOutputter
+from crawler.outputters import CSVOutputter, JSONOutputter, StdoutOutputter
 
 VULTR_URL = "https://www.vultr.com/products/bare-metal/#pricing"
 
@@ -11,6 +11,9 @@ def main(
     save_json: typer.FileTextWrite = typer.Option(
         None, help="Write results in a JSON file"
     ),
+    save_csv: typer.FileTextWrite = typer.Option(
+        None, help="Write results in a csv file"
+    ),
 ):
     outputs = []
 
@@ -19,6 +22,9 @@ def main(
 
     if save_json is not None:
         outputs.append(JSONOutputter(save_json))
+
+    if save_csv is not None:
+        outputs.append(CSVOutputter(save_csv))
 
     crawler = BareMetalCrawler(VULTR_URL, outputs)
     crawler.show_results()

@@ -1,8 +1,17 @@
 import requests
 from lxml import html
 
+from crawler.outputters import Outputter
+
 
 class BareMetalCrawler:
+    """
+    Class to crawl bare metal machines page
+
+    :param url: page URL
+    :outputters: output instance to show results
+    """
+
     field_names = (
         "MACHINE NAME",
         "PRICE [$/mo]",
@@ -12,17 +21,25 @@ class BareMetalCrawler:
         "BANDWIDTH / TRANSFER",
     )
 
-    def __init__(self, url: str, outputters: list) -> None:
+    def __init__(self, url: str, outputters: list[Outputter]) -> None:
         self.url = url
         self.outputters = outputters
 
     def _get_xpath_list(self, query: str) -> list:
+        """
+        Get xpath tree of a given page
+
+        :param query: XPath query
+        """
         response = requests.get(self.url)
         tree = html.fromstring(response.content)
 
         return tree.xpath(query)
 
     def _get_specifications(self) -> list[list[str]]:
+        """
+        Returns a list machine specifications from bare metal page
+        """
         xpath_query = '//h3[@class="package__title h6"] | //span[@class="price__value"]//b | //li[@class="package__list-item"]'
         xpath_list = self._get_xpath_list(xpath_query)
         infos = list(
@@ -45,7 +62,7 @@ class BareMetalCrawler:
 
             if "NVMe" in infos[step_len + 3]:
                 specification.append(
-                    "\n".join((infos[step_len + 2], infos[step_len + 3]))
+                    " / ".join((infos[step_len + 2], infos[step_len + 3]))
                 )
                 step_len += 1
             else:
@@ -53,7 +70,7 @@ class BareMetalCrawler:
 
             if "Intel" in infos[step_len + 3]:
                 specification.append(
-                    "\n".join((infos[step_len + 3], infos[step_len + 4]))
+                    " / ".join((infos[step_len + 3], infos[step_len + 4]))
                 )
                 step_len += 1
             else:
@@ -68,6 +85,9 @@ class BareMetalCrawler:
         return specifications
 
     def show_results(self) -> None:
+        """
+        Show results based on class instance outputters
+        """
         specifications = self._get_specifications()
 
         for output in self.outputters:
