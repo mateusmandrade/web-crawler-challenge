@@ -11,7 +11,9 @@ class Outputter:
     Class output interface
     """
 
-    def generate_output(self, field_names: list[str], results: list[list[str]]) -> None:
+    def generate_output(
+        self, results: dict[str, str], field_names: list[str] = []
+    ) -> None:
         """
         Method template to generate output
 
@@ -31,7 +33,9 @@ class StdoutOutputter(Outputter):
     def __init__(self, table_title: str):
         self.table_title = table_title
 
-    def generate_output(self, field_names: list[str], results: list[list[str]]) -> None:
+    def generate_output(
+        self, results: dict[str, str], field_names: list[str] = []
+    ) -> None:
         """
         Generate output in stdout
 
@@ -44,7 +48,7 @@ class StdoutOutputter(Outputter):
             table.add_column(field_name)
 
         for result in results:
-            table.add_row(*result)
+            table.add_row(*(result[field_name] for field_name in field_names))
 
         console = Console()
         console.print(table)
@@ -60,18 +64,6 @@ class FileOutputter(Outputter):
     def __init__(self, file: FileTextWrite):
         self.file = file
 
-    def _get_results_dicts(
-        self, field_names: list[str], results: list[list[str]]
-    ) -> list[dict[str, str]]:
-        """
-        Returns a structured dict with field and values to write in a file
-
-        :param field_names: list with field names
-        :param results: list of separated results
-        """
-        results_dicts = [dict(zip(field_names, result)) for result in results]
-        return results_dicts
-
 
 class JSONOutputter(FileOutputter):
     """
@@ -80,15 +72,16 @@ class JSONOutputter(FileOutputter):
     :param file: File to write output
     """
 
-    def generate_output(self, field_names: list[list[str]], results: list[str]) -> None:
+    def generate_output(
+        self, results: dict[str, str], field_names: list[str] = []
+    ) -> None:
         """
         Generate output in JSON file format
 
         :param field_names: list with field names
         :param results: list of separated results
         """
-        results_dicts = self._get_results_dicts(field_names, results)
-        self.file.write(f"{json.dumps(results_dicts)}\n")
+        self.file.write(f"{json.dumps(results)}\n")
 
 
 class CSVOutputter(FileOutputter):
@@ -98,16 +91,17 @@ class CSVOutputter(FileOutputter):
     :param file: File to write output
     """
 
-    def generate_output(self, field_names: list[list[str]], results: list[str]) -> None:
+    def generate_output(
+        self, results: dict[str, str], field_names: list[str] = []
+    ) -> None:
         """
         Generate output in csv file format
 
         :param field_names: list with field names
         :param results: list of separated results
         """
-        results_dicts = self._get_results_dicts(field_names, results)
         csv_writer = csv.DictWriter(self.file, fieldnames=field_names)
         csv_writer.writeheader()
 
-        for result in results_dicts:
+        for result in results:
             csv_writer.writerow(result)
